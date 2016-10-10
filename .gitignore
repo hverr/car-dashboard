@@ -1,0 +1,12 @@
+# Vim 
+.*.sw[a-z]
+
+# Haskell
+.cabal-sandbox
+.stack-work
+cabal.sandbox.config
+dist
+tags
+
+# NPM
+node_modules

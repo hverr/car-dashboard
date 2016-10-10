@@ -1,0 +1,11 @@
+{
+  "name": "car",
+  "version": "1.0.0",
+  "description": "Car Dashboard",
+  "repository": "https://github.com/hverr/car-dashboard",
+  "author": "Henri Verroken <henriverroken@gmail.com>",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "admin-lte": "^2.3.6"
+  }
+}
