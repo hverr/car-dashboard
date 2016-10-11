@@ -14,8 +14,27 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Lib
+  exposed-modules:     Dashboard.Paths
+                     , Dashboard.Server
+                     , Dashboard.Server.Errors
+                     , Dashboard.Server.Logger
+                     , Dashboard.Server.Monad
+                     , Dashboard.Server.Routes
+                     , Dashboard.Server.Routes.All
+                     , Dashboard.Server.Routes.Static
+                     , Dashboard.Settings
   build-depends:       base >= 4.7 && < 5
+                     , bytestring >= 0.10.6.0 && < 0.11
+                     , directory >= 1.2.2.0 && < 1.3
+                     , filepath >= 1.4.0.0 && < 1.5
+                     , hslogger >= 1.2.10 && < 1.3
+                     , http-types >= 0.9.1 && < 0.10
+                     , mime-types >= 0.1.0.7 && < 0.2
+                     , mtl >= 2.2.1 && < 2.3
+                     , text >= 1.2.2.1 && < 1.3
+                     , transformers >= 0.4.2.0 && < 0.5
+                     , wai >= 3.2.1.1 && < 3.3
+                     , warp >= 3.2.8 && < 3.3
   ghc-options:         -Wall -Werror
   default-language:    Haskell2010
   default-extensions:  OverloadedStrings
@@ -26,6 +45,7 @@ executable car-dashboard
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall -Werror
   build-depends:       base
                      , car-dashboard
+                     , hslogger >= 1.2.10 && < 1.3
   default-language:    Haskell2010
   default-extensions:  OverloadedStrings
 
