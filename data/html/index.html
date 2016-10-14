@@ -64,7 +64,8 @@
             <div class="box-body">
               <div class="row">
                 <div class="col-xs-6 col-sm-6 text-center">
-                  <input type="text"
+                  <input id="vehicle-speed-input"
+                         type="text"
                          class="knob"
                          data-skin="tron"
                          data-thickness="0.25"
@@ -80,7 +81,8 @@
                   <div class="knob-label">km/h</div>
                 </div>
                 <div class="col-xs-6 col-sm-6 text-center">
-                  <input type="text"
+                  <input id="engine-rpm-input"
+                         type="text"
                          class="knob"
                          data-skin="tron"
                          data-thickness="0.25"
@@ -102,11 +104,11 @@
                     </span>
                     <div class="info-box-content">
                       <span class="info-box-text">FUEL RATE</span>
-                      <span class="info-box-number">8 L/100km</span>
+                      <span class="info-box-number"><span id="fuel-rate-value">8</span> L/100km</span>
                       <div class="progress">
-                        <div class="progress-bar" style="width: 70%"></div>
+                        <div id="fuel-rate-bar" class="progress-bar" style="width: 70%;"></div>
                       </div>
-                      <span class="progress-description"> 2 L/h</span>
+                      <span class="progress-description"><span id="fuel-rate-value2">2</span> L/h</span>
                     </div>
                   </div>
                 </div>
@@ -117,9 +119,9 @@
                     </span>
                     <div class="info-box-content">
                       <span class="info-box-text">COOLANT TEMPERATURE</span>
-                      <span class="info-box-number">89 &deg;C</span>
+                      <span class="info-box-number"><span id="coolant-temp-value">89</span> &deg;C</span>
                       <div class="progress">
-                        <div class="progress-bar" style="width: 50%"></div>
+                        <div id="coolant-temp-bar" class="progress-bar" style="width: 50%"></div>
                       </div>
                     </div>
                   </div>
@@ -131,7 +133,7 @@
                     </span>
                     <div class="info-box-content">
                       <span class="info-box-text">INTAKE AIR TEMPERATURE</span>
-                      <span class="info-box-number">23 &deg;C</span>
+                      <span class="info-box-number"><span id="intake-air-temp-value">23</span> &deg;C</span>
                     </div>
                   </div>
                 </div>
@@ -142,9 +144,9 @@
                     </span>
                     <div class="info-box-content">
                       <span class="info-box-text">THROTTLE POSITION</span>
-                      <span class="info-box-number">39%</span>
+                      <span class="info-box-number"><span id="throttle-position-value">39</span>%</span>
                       <div class="progress">
-                        <div class="progress-bar" style="width: 39%"></div>
+                        <div id="throttle-position-bar" class="progress-bar" style="width: 39%"></div>
                       </div>
                     </div>
                   </div>
