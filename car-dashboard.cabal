@@ -15,6 +15,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Dashboard.CarUnit
+                     , Dashboard.CarUnit.Json
                      , Dashboard.Paths
                      , Dashboard.Server
                      , Dashboard.Server.Errors

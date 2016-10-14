@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE Rank2Types #-}
 -- | Module that ensures connection with the car
@@ -12,7 +11,6 @@ import qualified Prelude as P
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.STM (TVar, atomically, writeTVar)
 import Control.Monad (forever, when)
-import GHC.Generics (Generic)
 
 import Data.Aeson (ToJSON, toJSON, toEncoding)
 import Data.Time.Clock (UTCTime, getCurrentTime)
@@ -26,9 +24,11 @@ import System.Hardware.ELM327.Car (Car)
 import System.Hardware.ELM327.Errors (OBDError)
 import qualified System.Hardware.ELM327.Car as Car
 
+import Dashboard.CarUnit.Json (P'(..), CarData'(CarData'))
+import qualified Dashboard.CarUnit.Json as Json
+
 -- | A car data point.
 type P a = Either OBDError a
-
 
 -- | Data structure containing all available information.
 data CarData = CarData { dataTimestamp :: UTCTime
@@ -71,39 +71,19 @@ startFetchingData msDelay car chan = forever fetch
         when (ms P.< msDelay) $ threadDelay $ (msDelay P.- ms) P.* 1000
         return v
 
--- | A car data point, without dimensions.
-data P' a = P' { error :: Maybe String
-               , value :: Maybe a
-               , dim :: Maybe String }
-               deriving (Generic)
-instance ToJSON a => ToJSON (P' a) where
-
 -- | Convert 'P' to 'P''
 toP' :: String -> P a ->P' a
 toP' _    (Left e ) = P' { error = Just (show e),  value = Nothing, dim = Nothing   }
 toP' dim' (Right v) = P' { error = Nothing,        value = Just v,  dim = Just dim' }
 
--- | Data structure containing all available information, without dimensions.
-data CarData' = CarData' { dataTimestamp' :: UTCTime
-                         , engineCoolantTemperature' :: P' Double
-                         , engineFuelRate' :: P' Double
-                         , engineRPM' :: P' Double
-                         , intakeAirTemperature' :: P' Double
-                         , intakeManifoldAbsolutePressure' :: P' Double
-                         , massAirFlowRate' :: P' Double
-                         , throttlePosition' :: P' Double
-                         , vehicleSpeed' :: P' Double }
-                         deriving (Generic)
-instance ToJSON CarData' where
-
 -- | Convert 'CarData' to 'CarData''
 toCarData' :: CarData -> CarData'
-toCarData' c = CarData' { dataTimestamp' = dataTimestamp c
-                        , engineCoolantTemperature' = toP' "deg. C" $ toDegreeCelsiusAbsolute <$> engineCoolantTemperature c
-                        , engineFuelRate' = toP' "L/h" $ (/~ (liter / hour)) <$> engineFuelRate c
-                        , engineRPM' = toP' "rpm" $ (P.* 60) . (/~ hertz) <$> engineRPM c
-                        , intakeAirTemperature' = toP' "deg. C" $ toDegreeCelsiusAbsolute <$> intakeAirTemperature c
-                        , intakeManifoldAbsolutePressure' = toP' "kPa" $ (/~ kilo pascal) <$> intakeManifoldAbsolutePressure c
-                        , massAirFlowRate' = toP' "g/s" $ (/~ (gram / second)) <$> massAirFlowRate c
-                        , throttlePosition' = toP' "%" $ throttlePosition c
-                        , vehicleSpeed' = toP' "km/h" $ (/~ (kilo meter / hour)) <$> vehicleSpeed c }
+toCarData' c = CarData' { Json.dataTimestamp = dataTimestamp c
+                        , Json.engineCoolantTemperature = toP' "deg. C" $ toDegreeCelsiusAbsolute <$> engineCoolantTemperature c
+                        , Json.engineFuelRate = toP' "L/h" $ (/~ (liter / hour)) <$> engineFuelRate c
+                        , Json.engineRPM = toP' "rpm" $ (P.* 60) . (/~ hertz) <$> engineRPM c
+                        , Json.intakeAirTemperature = toP' "deg. C" $ toDegreeCelsiusAbsolute <$> intakeAirTemperature c
+                        , Json.intakeManifoldAbsolutePressure = toP' "kPa" $ (/~ kilo pascal) <$> intakeManifoldAbsolutePressure c
+                        , Json.massAirFlowRate = toP' "g/s" $ (/~ (gram / second)) <$> massAirFlowRate c
+                        , Json.throttlePosition = toP' "%" $ throttlePosition c
+                        , Json.vehicleSpeed = toP' "km/h" $ (/~ (kilo meter / hour)) <$> vehicleSpeed c }
