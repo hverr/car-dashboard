@@ -14,17 +14,16 @@ import Network.Wai.Handler.Warp (Port, run)
 
 import Dashboard.Server.Errors (ServerErr(..), errResponse, throwError)
 import Dashboard.Server.Logger (noticeS)
-import Dashboard.Server.Monad (ServerT, runServer)
+import Dashboard.Server.Monad (ServerT, ServerState, runServer)
 import Dashboard.Server.Routes (match)
 import Dashboard.Server.Routes.All (routes)
-import Dashboard.Settings (Settings)
 
 -- | Start the main HTTP server.
-startServer :: Port -> Settings -> IO ()
+startServer :: Port -> ServerState -> IO ()
 startServer port = run port . webserver
 
 -- | The mian HTTP server.
-webserver :: Settings -> Application
+webserver :: ServerState -> Application
 webserver settings request respond = either errResponse id <$> runServer settings (handleRequest request) >>= respond'
   where respond' x = do noticeS "server" $ showRequest request ++ " -> " ++ showResponse x
                         respond x
