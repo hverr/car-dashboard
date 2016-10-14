@@ -9,6 +9,7 @@
     "admin-lte": "^2.3.6",
     "font-awesome": "^4.6.3",
     "ionicons": "^3.0.0",
-    "jquery-knob": "^1.2.11"
+    "jquery-knob": "^1.2.11",
+    "lodash": "^4.16.4"
   }
 }
