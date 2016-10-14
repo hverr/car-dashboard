@@ -65,7 +65,8 @@
                 <div class="col-xs-6 col-sm-6 text-center">
                   <input type="text"
                          class="knob"
-                         data-thickness="0.4"
+                         data-skin="tron"
+                         data-thickness="0.25"
                          data-angleArc="250"
                          data-angleOffset="-125"
                          value="60"
@@ -73,13 +74,15 @@
                          data-height="135"
                          data-min="0"
                          data-max="240"
-                         data-fgColor="#00c0ef">
+                         data-fgColor="#00c0ef"
+                         data-readonly="true">
                   <div class="knob-label">km/h</div>
                 </div>
                 <div class="col-xs-6 col-sm-6 text-center">
                   <input type="text"
                          class="knob"
-                         data-thickness="0.4"
+                         data-skin="tron"
+                         data-thickness="0.25"
                          data-angleArc="250"
                          data-angleOffset="-125"
                          value="3000"
@@ -87,7 +90,8 @@
                          data-height="135"
                          data-min="0"
                          data-max="8000"
-                         data-fgColor="#ff851b">
+                         data-fgColor="#ff851b"
+                         data-readonly="true">
                   <div class="knob-label">RPM</div>
                 </div>
                 <div class="col-xs-12 col-sm-6">
@@ -163,10 +167,6 @@
 <script src="/dist/admin-lte/bootstrap/js/bootstrap.min.js"></script>
 <script src="/dist/jquery-knob/dist/jquery.knob.min.js"></script>
 <script src="/dist/admin-lte/dist/js/app.min.js"></script>
-<script>
-  $(function() {
-    $(".knob").knob();
-  });
-</script>
+<script src="knob.js"></script>
 </body>
 </html>
