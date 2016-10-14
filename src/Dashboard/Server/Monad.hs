@@ -17,7 +17,7 @@ module Dashboard.Server.Monad (
 , liftIO
 ) where
 
-import Control.Concurrent.STM (TVar, newTVarIO, TMVar, newEmptyTMVarIO)
+import Control.Concurrent.STM (TVar, newTVarIO)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Reader (ReaderT, MonadReader, runReaderT, ask)
 import Control.Monad.Except (ExceptT, MonadError, runExceptT)
@@ -29,14 +29,14 @@ import Dashboard.Server.Errors (ServerErr)
 -- | General server state
 data ServerState = ServerState { serverSettings :: Settings
                                , carData :: TVar (Maybe CarData)
-                               , carError :: TMVar String }
+                               , carError :: TVar (Maybe String) }
 
 -- | The default starting state of a server
 defaultState :: Settings -> IO ServerState
 defaultState settings =
     ServerState <$> pure settings
                 <*> newTVarIO Nothing
-                <*> newEmptyTMVarIO
+                <*> newTVarIO Nothing
 
 -- | Transformer for server methods.
 newtype ServerT m a = ServerT { runServerT :: ReaderT ServerState (ExceptT ServerErr m) a }

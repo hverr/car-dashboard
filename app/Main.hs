@@ -1,7 +1,7 @@
 module Main where
 
-import Control.Concurrent (forkIO)
-import Control.Concurrent.STM (atomically, putTMVar)
+import Control.Concurrent (forkIO, threadDelay)
+import Control.Concurrent.STM (atomically, writeTVar)
 import Control.Exception (SomeException, bracket, try)
 import Control.Monad (forever)
 
@@ -16,7 +16,9 @@ import System.IO (stderr)
 import System.Log.Formatter (simpleLogFormatter)
 import System.Log.Handler (setFormatter)
 import System.Log.Handler.Simple (streamHandler)
-import System.Log.Logger (Priority(..), updateGlobalLogger, rootLoggerName, setHandlers, setLevel)
+import System.Log.Logger (Priority(..), updateGlobalLogger,
+                          rootLoggerName, setHandlers, setLevel,
+                          errorM)
 
 import System.Hardware.ELM327.Connection (close)
 import System.Hardware.ELM327.Car.MAP (mapCar, defaultProperties)
@@ -78,4 +80,9 @@ carUnit ct state = forever $ do
     connect' (ConnectionTypeActualDevice dev) = ELM327.connect dev
 
     handleExc :: SomeException -> IO ()
-    handleExc e = atomically . putTMVar (carError state) $ "Car Unit Error: " ++ show e
+    handleExc e = do
+        let msg = "Car Unit Error: " ++ show e
+        errorM "carunit" msg
+        atomically $ writeTVar (carError state) (Just msg)
+        errorM "carunit" "Retrying in 5 seconds..."
+        threadDelay $ 5*1000*1000
