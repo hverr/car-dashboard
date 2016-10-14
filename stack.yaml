@@ -1,6 +1,7 @@
 resolver: lts-6.18
 packages:
 - '.'
-extra-deps: []
+extra-deps:
+- 'obd-0.1.0.0'
 flags: {}
 extra-package-dbs: []
