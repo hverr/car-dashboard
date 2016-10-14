@@ -10,7 +10,6 @@ import qualified Prelude as P
 
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.STM (TVar, atomically, writeTVar)
-import Control.Exception (bracket)
 import Control.Monad (forever, when)
 
 import Data.Time.Clock (UTCTime, getCurrentTime)
@@ -18,10 +17,9 @@ import Data.Time.Clock (UTCTime, getCurrentTime)
 import Numeric.Units.Dimensional.Prelude
 
 import System.Clock (Clock(Monotonic), TimeSpec(sec, nsec), getTime)
+import System.Log.Logger (infoM)
 
-import System.Hardware.ELM327 (connect)
-import System.Hardware.ELM327.Car.MAP (mapCar, defaultProperties)
-import System.Hardware.ELM327.Connection (close)
+import System.Hardware.ELM327.Car
 import System.Hardware.ELM327.Errors (OBDError)
 import qualified System.Hardware.ELM327.Car as Car
 
@@ -41,26 +39,27 @@ data CarData = CarData { dataTimestamp :: UTCTime
                        , vehicleSpeed :: P (Velocity Double) }
 
 -- | Start fetching car data.
-startFetchingData :: Int          -- ^ The delay between requests in milliseconds
-                  -> String       -- ^ The serial port to connect to
-                  -> TVar CarData -- ^ A 'TVar' that will be used to write the data to
+startFetchingData :: Int                  -- ^ The delay between requests in milliseconds
+                  -> Car IO               -- ^ The car to get the data from
+                  -> TVar (Maybe CarData) -- ^ A 'TVar' that will be used to write the data to
                   -> IO ()
-startFetchingData usDelay port chan = bracket (connect port) close fetch
+startFetchingData msDelay car chan = forever fetch
   where
-    fetch con = forever $ ensureDuration $ getData (mapCar con defaultProperties) >>= (atomically . writeTVar chan)
-    getData car = CarData <$> getCurrentTime
-                          <*> Car.engineCoolantTemperature car
-                          <*> Car.engineFuelRate car
-                          <*> Car.engineRPM car
-                          <*> Car.intakeAirTemperature car
-                          <*> Car.intakeManifoldAbsolutePressure car
-                          <*> Car.massAirFlowRate car
-                          <*> Car.throttlePosition car
-                          <*> Car.vehicleSpeed car
+    fetch = ensureDuration $ (Just <$> getData) >>= (atomically . writeTVar chan)
+    getData = CarData <$> getCurrentTime
+                      <*> Car.engineCoolantTemperature car
+                      <*> Car.engineFuelRate car
+                      <*> Car.engineRPM car
+                      <*> Car.intakeAirTemperature car
+                      <*> Car.intakeManifoldAbsolutePressure car
+                      <*> Car.massAirFlowRate car
+                      <*> Car.throttlePosition car
+                      <*> Car.vehicleSpeed car
     ensureDuration action = do
         begin <- getTime Monotonic
         v <- action
         end <- getTime Monotonic
-        let s = fromIntegral $ (sec end P.- sec begin) P.* 1000 P.+ (nsec end P.- nsec begin) `div` 1000000
-        when (s P.< usDelay) $ threadDelay (usDelay P.- s)
+        let ms = fromIntegral $ (sec end P.- sec begin) P.* 1000 P.+ (nsec end P.- nsec begin) `div` 1000000
+        infoM "carunit" $ "Updated car data in " ++ show ms ++ "ms"
+        when (ms P.< msDelay) $ threadDelay $ (msDelay P.- ms) P.* 1000
         return v
