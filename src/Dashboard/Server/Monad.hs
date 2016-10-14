@@ -13,6 +13,7 @@ module Dashboard.Server.Monad (
 , HasSettings, askSettings
 
   -- * Re-exports
+, ask
 , liftIO
 ) where
 

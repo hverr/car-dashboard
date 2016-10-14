@@ -22,6 +22,8 @@ library
                      , Dashboard.Server.Monad
                      , Dashboard.Server.Routes
                      , Dashboard.Server.Routes.All
+                     , Dashboard.Server.Routes.Api
+                     , Dashboard.Server.Routes.Json
                      , Dashboard.Server.Routes.Static
                      , Dashboard.Settings
   build-depends:       base >= 4.7 && < 5
