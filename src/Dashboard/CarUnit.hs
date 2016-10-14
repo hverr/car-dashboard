@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE Rank2Types #-}
 -- | Module that ensures connection with the car
@@ -11,15 +12,17 @@ import qualified Prelude as P
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.STM (TVar, atomically, writeTVar)
 import Control.Monad (forever, when)
+import GHC.Generics (Generic)
 
+import Data.Aeson (ToJSON, toJSON, toEncoding)
 import Data.Time.Clock (UTCTime, getCurrentTime)
 
-import Numeric.Units.Dimensional.Prelude
+import Numeric.Units.Dimensional.Prelude hiding (error)
 
 import System.Clock (Clock(Monotonic), TimeSpec(sec, nsec), getTime)
 import System.Log.Logger (infoM)
 
-import System.Hardware.ELM327.Car
+import System.Hardware.ELM327.Car (Car)
 import System.Hardware.ELM327.Errors (OBDError)
 import qualified System.Hardware.ELM327.Car as Car
 
@@ -37,6 +40,10 @@ data CarData = CarData { dataTimestamp :: UTCTime
                        , massAirFlowRate :: P (MassFlow Double)
                        , throttlePosition :: P Double
                        , vehicleSpeed :: P (Velocity Double) }
+
+instance ToJSON CarData where
+    toJSON = toJSON . toCarData'
+    toEncoding = toEncoding . toCarData'
 
 -- | Start fetching car data.
 startFetchingData :: Int                  -- ^ The delay between requests in milliseconds
@@ -63,3 +70,40 @@ startFetchingData msDelay car chan = forever fetch
         infoM "carunit" $ "Updated car data in " ++ show ms ++ "ms"
         when (ms P.< msDelay) $ threadDelay $ (msDelay P.- ms) P.* 1000
         return v
+
+-- | A car data point, without dimensions.
+data P' a = P' { error :: Maybe String
+               , value :: Maybe a
+               , dim :: Maybe String }
+               deriving (Generic)
+instance ToJSON a => ToJSON (P' a) where
+
+-- | Convert 'P' to 'P''
+toP' :: String -> P a ->P' a
+toP' _    (Left e ) = P' { error = Just (show e),  value = Nothing, dim = Nothing   }
+toP' dim' (Right v) = P' { error = Nothing,        value = Just v,  dim = Just dim' }
+
+-- | Data structure containing all available information, without dimensions.
+data CarData' = CarData' { dataTimestamp' :: UTCTime
+                         , engineCoolantTemperature' :: P' Double
+                         , engineFuelRate' :: P' Double
+                         , engineRPM' :: P' Double
+                         , intakeAirTemperature' :: P' Double
+                         , intakeManifoldAbsolutePressure' :: P' Double
+                         , massAirFlowRate' :: P' Double
+                         , throttlePosition' :: P' Double
+                         , vehicleSpeed' :: P' Double }
+                         deriving (Generic)
+instance ToJSON CarData' where
+
+-- | Convert 'CarData' to 'CarData''
+toCarData' :: CarData -> CarData'
+toCarData' c = CarData' { dataTimestamp' = dataTimestamp c
+                        , engineCoolantTemperature' = toP' "deg. C" $ toDegreeCelsiusAbsolute <$> engineCoolantTemperature c
+                        , engineFuelRate' = toP' "L/h" $ (/~ (liter / hour)) <$> engineFuelRate c
+                        , engineRPM' = toP' "rpm" $ (P.* 60) . (/~ hertz) <$> engineRPM c
+                        , intakeAirTemperature' = toP' "deg. C" $ toDegreeCelsiusAbsolute <$> intakeAirTemperature c
+                        , intakeManifoldAbsolutePressure' = toP' "kPa" $ (/~ kilo pascal) <$> intakeManifoldAbsolutePressure c
+                        , massAirFlowRate' = toP' "g/s" $ (/~ (gram / second)) <$> massAirFlowRate c
+                        , throttlePosition' = toP' "%" $ throttlePosition c
+                        , vehicleSpeed' = toP' "km/h" $ (/~ (kilo meter / hour)) <$> vehicleSpeed c }
