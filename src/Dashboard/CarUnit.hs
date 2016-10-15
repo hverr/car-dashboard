@@ -2,7 +2,8 @@
 {-# LANGUAGE Rank2Types #-}
 -- | Module that ensures connection with the car
 module Dashboard.CarUnit (
-  CarData(..)
+  P
+, CarData(..)
 , startFetchingData
 ) where
 
@@ -71,7 +72,7 @@ startFetchingData msDelay car chan = forever fetch
         when (ms P.< msDelay) $ threadDelay $ (msDelay P.- ms) P.* 1000
         return v
 
--- | Convert 'P' to 'P''
+-- | Convert @P a@ to @P' a@
 toP' :: String -> P a ->P' a
 toP' _    (Left e ) = P' { error = Just (show e),  value = Nothing, dim = Nothing   }
 toP' dim' (Right v) = P' { error = Nothing,        value = Just v,  dim = Just dim' }

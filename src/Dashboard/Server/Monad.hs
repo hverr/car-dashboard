@@ -10,7 +10,7 @@ module Dashboard.Server.Monad (
 , ServerState(..)
 , defaultState
 , runServer
-, HasSettings, askSettings
+, HasSettings(askSettings)
 
   -- * Re-exports
 , ask

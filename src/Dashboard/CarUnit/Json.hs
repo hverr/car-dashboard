@@ -11,6 +11,8 @@ data P' a = P' { error :: Maybe String
                , value :: Maybe a
                , dim :: Maybe String }
                deriving (Generic)
+
+-- | Convert A 'P''-value to JSON.
 instance ToJSON a => ToJSON (P' a) where
 
 -- | Data structure containing all available information, without dimensions.
@@ -24,4 +26,6 @@ data CarData' = CarData' { dataTimestamp :: UTCTime
                          , throttlePosition :: P' Double
                          , vehicleSpeed :: P' Double }
                          deriving (Generic)
+
+-- | Convert 'CarData'' to JSON.
 instance ToJSON CarData' where
