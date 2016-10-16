@@ -1,0 +1,8 @@
+[Unit]
+Description=Car Dashboard
+
+[Service]
+ExecStart=/usr/sbin/car-dashboard --data-dir=/usr/share/car-dashboard
+
+[Install]
+WantedBy=multi-user.target
