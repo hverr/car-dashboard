@@ -56,7 +56,7 @@ $(function() {
 
   function updateValue(humanName, data, f) {
     if (data.error !== null) {
-      showError("Could not get " + humanName + ": " + value.error);
+      showError("Could not get " + humanName + ": " + data.error);
       return;
     }
     f(data.value);

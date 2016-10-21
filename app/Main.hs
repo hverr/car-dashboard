@@ -4,6 +4,7 @@ import Control.Concurrent (forkIO, threadDelay)
 import Control.Concurrent.STM (atomically, writeTVar)
 import Control.Exception (SomeException, bracket, try)
 import Control.Monad (forever)
+import Control.Monad.IO.Class (liftIO)
 
 import Options.Applicative (Parser, execParser,
                             flag, strOption,
@@ -18,10 +19,12 @@ import System.Log.Handler (setFormatter)
 import System.Log.Handler.Simple (streamHandler)
 import System.Log.Logger (Priority(..), updateGlobalLogger,
                           rootLoggerName, setHandlers, setLevel,
-                          errorM)
+                          noticeM, errorM)
 
-import System.Hardware.ELM327.Connection (close)
+import System.Hardware.ELM327.Car (runCarT)
 import System.Hardware.ELM327.Car.MAP (mapCar, defaultProperties)
+import System.Hardware.ELM327.Commands (AT(..), Protocol(..))
+import System.Hardware.ELM327.Connection (withCon, at, close')
 import System.Hardware.ELM327.Simulator (defaultSimulator)
 import System.Hardware.ELM327.Simulator.OBDBus.VWPolo2007 (stoppedCarBus)
 import qualified System.Hardware.ELM327 as ELM327
@@ -51,8 +54,8 @@ main = execParser i >>= main'
 main' :: ConnectionType -> IO ()
 main' conType = do
     -- Setup logging.
-    stderrLog <- setFormatter <$> streamHandler stderr INFO <*> pure format
-    updateGlobalLogger rootLoggerName $ setLevel INFO
+    stderrLog <- setFormatter <$> streamHandler stderr DEBUG <*> pure format
+    updateGlobalLogger rootLoggerName $ setLevel DEBUG
     updateGlobalLogger rootLoggerName $ setHandlers [stderrLog]
 
     -- Initialize the global state
@@ -66,23 +69,38 @@ main' conType = do
 
 -- | Manage the car unit
 carUnit :: ConnectionType -> ServerState -> IO ()
-carUnit ct state = forever $ do
-    v <- try fetcher
-    either handleExc return v
+carUnit ct state = forever $ bracket connect close' fetcher
   where
-    fetcher = bracket connect close $ \con -> do
-        let car = mapCar con defaultProperties
+    fetcher con = try (fetcher' con) >>= either handleExc return
+    fetcher' con = do
+        let car = mapCar defaultProperties
         let carData' = carData state
-        startFetchingData 500 car carData'
+        r <- withCon con $ do
+            liftIO $ noticeM "carunit" $ "Selecting protocol " ++ show (ATSelectProtocol AutomaticProtocol)
+            _ <- at (ATSelectProtocol AutomaticProtocol)
+            runCarT $ startFetchingData 500 car carData'
+        case r of
+            Right _ -> fetcher con
+            Left e -> handleErr e
 
     connect = connect' ct
     connect' ConnectionTypeSimulator = Simulator.connect $ defaultSimulator stoppedCarBus
-    connect' (ConnectionTypeActualDevice dev) = ELM327.connect dev
+    connect' (ConnectionTypeActualDevice dev) = do
+        noticeM "carunit" $ "Connecting to " ++ dev
+        con <- ELM327.connect dev
+        case con of
+            Right con' -> return con'
+            Left err -> do
+                errorM "carunit" $ "Cannot connect, retrying: " ++ show err
+                connect
+
+    handleErr e = do
+        errorM "carunit" $ show e
+        errorM "carunit" "Immediately retrying..."
 
     handleExc :: SomeException -> IO ()
     handleExc e = do
-        let msg = "Car Unit Error: " ++ show e
-        errorM "carunit" msg
+        let msg = "Unexpected Car Unit Error: " ++ show e
         atomically $ writeTVar (carError state) (Just msg)
-        errorM "carunit" "Retrying in 5 seconds..."
+        errorM "carunit" $ show e
         threadDelay $ 5*1000*1000
