@@ -43,4 +43,4 @@ cd dist
 dpkg-deb --build "car-dashboard_${VERSION}-${REVISION}-${ARCH}"
 cd ..
 
-echo "Package is in ./dist/car-dashboard_${VERSION}-${REVISION}-${ARCH}"
+echo "Package is in ./dist/car-dashboard_${VERSION}-${REVISION}-${ARCH}.deb"
