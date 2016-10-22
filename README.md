@@ -8,7 +8,8 @@ Developing
 
 ```sh
 sudo apt-get install -y npm
-npm install
+make setup
+make js
 stack build
 stack exec car-dashboard -- --simulator
 ```

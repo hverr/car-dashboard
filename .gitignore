@@ -1,6 +1,9 @@
 # Vim 
 .*.sw[a-z]
 
+# Build
+data/html/js
+
 # Haskell
 .cabal-sandbox
 .stack-work
@@ -10,3 +13,4 @@ tags
 
 # NPM
 node_modules
+typings

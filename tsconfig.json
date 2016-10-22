@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "module": "none",
+        "noImplicitAny": true,
+        "preserveConstEnums": true,
+        "sourceMap": true,
+        "outDir": "data/html/js/",
+        "typeRoots": ["./typings/globals", "./typings/modules"],
+        "types": ["jquery", "lodash"]
+    },
+    "include": [
+        "data/html/ts/**/*"
+    ]
+}

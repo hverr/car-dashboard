@@ -10,6 +10,8 @@
     "font-awesome": "^4.6.3",
     "ionicons": "^3.0.0",
     "jquery-knob": "^1.2.11",
-    "lodash": "^4.16.4"
+    "lodash": "^4.16.4",
+    "typescript": "^2.0.3",
+    "typings": "^1.4.0"
   }
 }

@@ -2,7 +2,8 @@
 
 set -ex
 
-npm install
+make setup
+make js
 cabal install
 
 VERSION=$(awk '$1 == "version:" {print $2}' car-dashboard.cabal)
