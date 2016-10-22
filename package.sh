@@ -1,21 +1,29 @@
 #!/bin/sh
 
+BIN="$1"
+ARCH="$2"
+[ -z "$ARCH" ] && ARCH=$(dpkg --print-architecture)
+
+[ -n "$BIN" ] && echo "Using binary $BIN"
+echo "Using architecture $ARCH"
+
 set -ex
 
 make setup
 make js
-cabal install
+[ -z "$BIN" ] && cabal sandbox init && cabal install
+[ -z "$BIN" ] && BIN=.cabal-sandbox/bin/car-dashboard
 
 VERSION=$(awk '$1 == "version:" {print $2}' car-dashboard.cabal)
 REVISION=1
 
-DEB_ROOT="dist/car-dashboard_${VERSION}-${REVISION}"
+DEB_ROOT="dist/car-dashboard_${VERSION}-${REVISION}-${ARCH}"
 mkdir -p "$DEB_ROOT/DEBIAN/"
 mkdir -p "$DEB_ROOT/lib/systemd/system/"
 mkdir -p "$DEB_ROOT/usr/bin/"
 mkdir -p "$DEB_ROOT/usr/share/car-dashboard/"
 
-cp .cabal-sandbox/bin/car-dashboard "$DEB_ROOT/usr/bin/"
+cp "$BIN" "$DEB_ROOT/usr/bin/"
 cp car-dashboard.service "$DEB_ROOT/lib/systemd/system/"
 rsync -r data "$DEB_ROOT/usr/share/car-dashboard/"
 rsync -r node_modules "$DEB_ROOT/usr/share/car-dashboard/"
@@ -25,14 +33,14 @@ Package: car-dashboard
 Version: ${VERSION}-${REVISION}
 Section: base
 Priority: optional
-Architecture: $(dpkg --print-architecture)
+Architecture: $ARCH
 Depends: zlib1g-dev, libncurses5-dev
 Maintainer: Henri Verroken <henriverroken@gmail.com>
 Description: Car Dashboard
 EOF
 
 cd dist
-dpkg-deb --build "car-dashboard_${VERSION}-${REVISION}"
+dpkg-deb --build "car-dashboard_${VERSION}-${REVISION}-${ARCH}"
 cd ..
 
-echo "Package is in ./dist/car-dashboard_${VERSION}-${REVISION}"
+echo "Package is in ./dist/car-dashboard_${VERSION}-${REVISION}-${ARCH}"
