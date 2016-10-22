@@ -2,7 +2,9 @@
 
 BIN="$1"
 ARCH="$2"
+PROC="$3"
 [ -z "$ARCH" ] && ARCH=$(dpkg --print-architecture)
+[ -z "$PROC" ] && PROC="$ARCH"
 
 [ -n "$BIN" ] && echo "Using binary $BIN"
 echo "Using architecture $ARCH"
@@ -17,13 +19,13 @@ make js
 VERSION=$(awk '$1 == "version:" {print $2}' car-dashboard.cabal)
 REVISION=1
 
-DEB_ROOT="dist/car-dashboard_${VERSION}-${REVISION}-${ARCH}"
+DEB_ROOT="dist/car-dashboard_${VERSION}-${REVISION}-${PROC}"
 mkdir -p "$DEB_ROOT/DEBIAN/"
 mkdir -p "$DEB_ROOT/lib/systemd/system/"
 mkdir -p "$DEB_ROOT/usr/bin/"
 mkdir -p "$DEB_ROOT/usr/share/car-dashboard/"
 
-cp "$BIN" "$DEB_ROOT/usr/bin/"
+cp "$BIN" "$DEB_ROOT/usr/bin/car-dashboard"
 cp car-dashboard.service "$DEB_ROOT/lib/systemd/system/"
 rsync -r data "$DEB_ROOT/usr/share/car-dashboard/"
 rsync -r node_modules "$DEB_ROOT/usr/share/car-dashboard/"
@@ -40,7 +42,7 @@ Description: Car Dashboard
 EOF
 
 cd dist
-dpkg-deb --build "car-dashboard_${VERSION}-${REVISION}-${ARCH}"
+dpkg-deb --build "car-dashboard_${VERSION}-${REVISION}-${PROC}"
 cd ..
 
-echo "Package is in ./dist/car-dashboard_${VERSION}-${REVISION}-${ARCH}.deb"
+echo "Package is in ./dist/car-dashboard_${VERSION}-${REVISION}-${PROC}.deb"
