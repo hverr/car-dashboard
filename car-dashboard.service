@@ -2,7 +2,8 @@
 Description=Car Dashboard
 
 [Service]
-ExecStart=/usr/sbin/car-dashboard --data-dir=/usr/share/car-dashboard
+WorkingDirectory=/usr/share/car-dashboard
+ExecStart=/usr/sbin/car-dashboard
 
 [Install]
 WantedBy=multi-user.target
