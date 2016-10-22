@@ -24,7 +24,7 @@ import System.Log.Logger (Priority(..), updateGlobalLogger,
 import System.Hardware.ELM327.Car (runCarT)
 import System.Hardware.ELM327.Car.MAP (mapCar, defaultProperties)
 import System.Hardware.ELM327.Commands (AT(..), Protocol(..))
-import System.Hardware.ELM327.Connection (withCon, at, close')
+import System.Hardware.ELM327.Connection (conLog, fileLog, withCon, at, close')
 import System.Hardware.ELM327.Simulator (defaultSimulator)
 import System.Hardware.ELM327.Simulator.OBDBus.VWPolo2007 (stoppedCarBus)
 import qualified System.Hardware.ELM327 as ELM327
@@ -69,10 +69,9 @@ main' conType = do
 
 -- | Manage the car unit
 carUnit :: ConnectionType -> ServerState -> IO ()
-carUnit ct state = forever $ bracket connect close' fetcher
+carUnit ct state = forever $ try (bracket connect close' fetcher) >>= either handleExc return
   where
-    fetcher con = try (fetcher' con) >>= either handleExc return
-    fetcher' con = do
+    fetcher con = do
         let car = mapCar defaultProperties
         let carData' = carData state
         r <- withCon con $ do
@@ -83,7 +82,11 @@ carUnit ct state = forever $ bracket connect close' fetcher
             Right _ -> fetcher con
             Left e -> handleErr e
 
-    connect = connect' ct
+    connect = do
+        l <- fileLog "car-dashboard.serial"
+        c <- connect' ct
+        return c { conLog = l }
+
     connect' ConnectionTypeSimulator = Simulator.connect $ defaultSimulator stoppedCarBus
     connect' (ConnectionTypeActualDevice dev) = do
         noticeM "carunit" $ "Connecting to " ++ dev
