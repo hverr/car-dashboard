@@ -75,7 +75,7 @@ $(function() {
   }
 
   function showError(err: string): void {
-    $('#alert-box').append(genAlert({'message' : err}));
+    $('#alert-box').html(genAlert({'message' : err}));
   }
 
   function f(v: number, p: number): string {
