@@ -3,16 +3,18 @@ module Main where
 import Control.Concurrent (forkIO, threadDelay)
 import Control.Concurrent.STM (atomically, writeTVar)
 import Control.Exception (SomeException, bracket, try)
+import Control.Lens ((^?))
 import Control.Monad (forever)
 import Control.Monad.IO.Class (liftIO)
 
 import Options.Applicative (Parser, execParser,
                             flag, strOption,
-                            help, long, value,
+                            help, long, short, value,
                             info, progDesc,
                             (<>))
 import Options.Applicative.Extra (helper)
 
+import System.Exit (die)
 import System.IO (stderr)
 import System.Log.Formatter (simpleLogFormatter)
 import System.Log.Handler (setFormatter)
@@ -23,7 +25,7 @@ import System.Log.Logger (Priority(..), updateGlobalLogger,
 
 import System.Hardware.ELM327.Car (runCarT)
 import System.Hardware.ELM327.Car.MAP (mapCar, defaultProperties)
-import System.Hardware.ELM327.Commands (AT(..), Protocol(..))
+import System.Hardware.ELM327.Commands (AT(..), Protocol(..), protocol)
 import System.Hardware.ELM327.Connection (conLog, fileLog, withCon, at, close')
 import System.Hardware.ELM327.Simulator (defaultSimulator)
 import System.Hardware.ELM327.Simulator.OBDBus.VWPolo2007 (stoppedCarBus)
@@ -34,6 +36,8 @@ import Dashboard.CarUnit (startFetchingData)
 import Dashboard.Server (startServer)
 import Dashboard.Server.Monad (ServerState(..), defaultState)
 import Dashboard.Settings (defaultSettings)
+
+data Options = Options ConnectionType (Maybe Protocol)
 
 data ConnectionType = ConnectionTypeActualDevice FilePath
                     | ConnectionTypeSimulator
@@ -46,13 +50,23 @@ serialPort :: Parser FilePath
 serialPort = strOption m
     where m = long "port" <> value "/dev/ttyUSB0" <> help "The serial port to connect to"
 
+protocolOpt :: Parser (Maybe Protocol)
+protocolOpt = (^? protocol) <$> strOption m
+    where m = long "protocol" <> short 'p' <> value "0" <> help h
+          h = "The OBD protocol, see the SP command in the ELM327 datasheet"
+
+options :: Parser Options
+options = Options <$> connectionType <*> protocolOpt
+
 main :: IO ()
 main = execParser i >>= main'
     where i = info p $ progDesc "Run the car dashboard"
-          p = helper <*> connectionType
+          p = helper <*> options
 
-main' :: ConnectionType -> IO ()
-main' conType = do
+main' :: Options -> IO ()
+main' (Options conType mProto) = do
+    proto <- maybe (die "Invalid protocol (-p|--protocol)") return mProto
+
     -- Setup logging.
     stderrLog <- setFormatter <$> streamHandler stderr DEBUG <*> pure format
     updateGlobalLogger rootLoggerName $ setLevel DEBUG
@@ -62,21 +76,21 @@ main' conType = do
     state <- defaultState defaultSettings
 
     -- Start server components
-    _ <- forkIO $ carUnit conType state
+    _ <- forkIO $ carUnit conType proto state
     startServer 8080 state
   where
     format = simpleLogFormatter "[$time $loggername $prio] $msg"
 
 -- | Manage the car unit
-carUnit :: ConnectionType -> ServerState -> IO ()
-carUnit ct state = forever $ try (bracket connect close' fetcher) >>= either handleExc return
+carUnit :: ConnectionType -> Protocol -> ServerState -> IO ()
+carUnit ct proto state = forever $ try (bracket connect close' fetcher) >>= either handleExc return
   where
     fetcher con = do
         let car = mapCar defaultProperties
         let carData' = carData state
         r <- withCon con $ do
-            liftIO $ noticeM "carunit" $ "Selecting protocol " ++ show (ATSelectProtocol AutomaticProtocol)
-            _ <- at (ATSelectProtocol AutomaticProtocol)
+            liftIO $ noticeM "carunit" $ "Selecting protocol " ++ show proto
+            _ <- at (ATSelectProtocol proto)
             runCarT $ startFetchingData 500 car carData'
         case r of
             Right _ -> fetcher con
