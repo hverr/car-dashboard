@@ -91,7 +91,7 @@ carUnit ct proto state = forever $ try (bracket connect close' fetcher) >>= eith
         r <- withCon con $ do
             liftIO $ noticeM "carunit" $ "Selecting protocol " ++ show proto
             _ <- at (ATSelectProtocol proto)
-            runCarT $ startFetchingData 500 car carData'
+            runCarT $ startFetchingData 3000 car carData'
         case r of
             Right _ -> fetcher con
             Left e -> handleErr e
