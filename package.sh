@@ -20,6 +20,7 @@ VERSION=$(awk '$1 == "version:" {print $2}' car-dashboard.cabal)
 REVISION=1
 
 DEB_ROOT="dist/car-dashboard_${VERSION}-${REVISION}-${PROC}"
+rm -rf "$DEB_ROOT"
 mkdir -p "$DEB_ROOT/DEBIAN/"
 mkdir -p "$DEB_ROOT/lib/systemd/system/"
 mkdir -p "$DEB_ROOT/usr/bin/"
