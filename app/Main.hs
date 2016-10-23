@@ -26,7 +26,7 @@ import System.Log.Logger (Priority(..), updateGlobalLogger,
 import System.Hardware.ELM327.Car (runCarT)
 import System.Hardware.ELM327.Car.MAP (mapCar, defaultProperties)
 import System.Hardware.ELM327.Commands (AT(..), Protocol(..), protocol)
-import System.Hardware.ELM327.Connection (conLog, fileLog, withCon, at, close')
+import System.Hardware.ELM327.Connection (ConError(..), conLog, fileLog, withCon, at, close')
 import System.Hardware.ELM327.Simulator (defaultSimulator)
 import System.Hardware.ELM327.Simulator.OBDBus.VWPolo2007 (stoppedCarBus)
 import qualified System.Hardware.ELM327 as ELM327
@@ -111,9 +111,13 @@ carUnit ct proto state = forever $ try (bracket connect close' fetcher) >>= eith
                 errorM "carunit" $ "Cannot connect, retrying: " ++ show err
                 connect
 
-    handleErr e = do
+    handleErr e@ConTimeoutError = do
         errorM "carunit" $ show e
         errorM "carunit" "Immediately retrying..."
+    handleErr (ConOBDError e) = do
+        errorM "carunit" $ show e
+        errorM "carunit" "Retrying in 5 seconds..."
+        threadDelay $ 5*1000*1000
 
     handleExc :: SomeException -> IO ()
     handleExc e = do
