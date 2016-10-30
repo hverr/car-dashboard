@@ -60,7 +60,7 @@ $(function() {
         $('#throttle-position-bar').attr('style', 'width: ' + v + '%;');
       })();
     }).always(function() {
-      setTimeout(queryEngineData, 250);
+      setTimeout(queryEngineData, 100);
     });
   }
 
