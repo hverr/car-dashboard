@@ -16,6 +16,8 @@ library
   hs-source-dirs:      src
   exposed-modules:     Dashboard.CarUnit
                      , Dashboard.CarUnit.Json
+                     , Dashboard.MusicUnit
+                     , Dashboard.MusicUnit.State
                      , Dashboard.Paths
                      , Dashboard.Server
                      , Dashboard.Server.Errors
@@ -25,6 +27,7 @@ library
                      , Dashboard.Server.Routes.All
                      , Dashboard.Server.Routes.Api
                      , Dashboard.Server.Routes.Json
+                     , Dashboard.Server.Routes.Music
                      , Dashboard.Server.Routes.Static
                      , Dashboard.Settings
   build-depends:       base >= 4.7 && < 5

@@ -1,7 +1,11 @@
 -- | This module contains the HTTP routes
 module Dashboard.Server.Routes where
 
-import Network.Wai (Request, Response)
+import Data.ByteString.Lazy (ByteString)
+import qualified Data.ByteString.Lazy as ByteString
+
+import Network.Wai (Request, Response, responseLBS)
+import Network.HTTP.Types (hContentType, ok200)
 
 import Dashboard.Server.Monad (ServerT)
 
@@ -12,3 +16,7 @@ data Route = Route (Request -> Bool) (Request -> ServerT IO Response)
 match :: [Route] -> Request -> Maybe (Request -> ServerT IO Response)
 match [] _ = Nothing
 match (Route pred' f:xs) req = if pred' req then Just f else match xs req
+
+-- | Respond with @OK 200@ and some plain text.
+responseTextOK :: ByteString -> ServerT IO Response
+responseTextOK = return . responseLBS ok200 [(hContentType, "text/plain")] . (`ByteString.append` "\n")

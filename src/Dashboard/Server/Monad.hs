@@ -1,8 +1,9 @@
 {-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 -- | The main monad transformer for the server module.
 module Dashboard.Server.Monad (
   -- * Transformers
@@ -23,13 +24,16 @@ import Control.Monad.Reader (ReaderT, MonadReader, runReaderT, ask)
 import Control.Monad.Except (ExceptT, MonadError, runExceptT)
 
 import Dashboard.CarUnit (CarData)
+import Dashboard.MusicUnit (HasMusicState(..))
 import Dashboard.Settings (Settings)
 import Dashboard.Server.Errors (ServerErr)
+import qualified Dashboard.MusicUnit as MusicUnit
 
 -- | General server state
 data ServerState = ServerState { serverSettings :: Settings
                                , carData :: TVar (Maybe CarData)
-                               , carError :: TVar (Maybe String) }
+                               , carError :: TVar (Maybe String)
+                               , musicState :: MusicUnit.State }
 
 -- | The default starting state of a server
 defaultState :: Settings -> IO ServerState
@@ -37,6 +41,7 @@ defaultState settings =
     ServerState <$> pure settings
                 <*> newTVarIO Nothing
                 <*> newTVarIO Nothing
+                <*> MusicUnit.emptyState
 
 -- | Transformer for server methods.
 newtype ServerT m a = ServerT { runServerT :: ReaderT ServerState (ExceptT ServerErr m) a }
@@ -53,3 +58,7 @@ class Monad m => HasSettings m where
 -- | The server transformer has settings
 instance MonadReader ServerState m => HasSettings m where
     askSettings = serverSettings <$> ask
+
+-- | The server transformer has music state
+instance MonadReader ServerState m => HasMusicState m where
+    askMusicState = musicState <$> ask
