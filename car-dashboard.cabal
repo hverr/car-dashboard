@@ -17,6 +17,7 @@ library
   exposed-modules:     Dashboard.CarUnit
                      , Dashboard.CarUnit.Json
                      , Dashboard.MusicUnit
+                     , Dashboard.MusicUnit.Files
                      , Dashboard.MusicUnit.State
                      , Dashboard.Paths
                      , Dashboard.Server

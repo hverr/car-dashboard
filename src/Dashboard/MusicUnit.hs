@@ -18,6 +18,7 @@ import Control.Monad.IO.Class (MonadIO, liftIO)
 
 import Data.ByteString.Lazy (ByteString)
 
+import Dashboard.MusicUnit.Files (FileExtension)
 import Dashboard.MusicUnit.State (State(..), HasMusicState(..), emptyState,
                                   Metadata)
 
@@ -30,5 +31,5 @@ updateMetadata :: (MonadIO m, HasMusicState m) => Metadata -> m ()
 updateMetadata x = askMusicMetadata >>= liftIO . atomically . flip putTMVar x
 
 -- | Update the track data.
-updateTrackData :: (MonadIO m, HasMusicState m) => Int -> String -> ByteString -> m ()
+updateTrackData :: (MonadIO m, HasMusicState m) => Int -> FileExtension -> ByteString -> m ()
 updateTrackData = undefined
