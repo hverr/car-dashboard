@@ -19,6 +19,8 @@ library
                      , Dashboard.MusicUnit
                      , Dashboard.MusicUnit.Files
                      , Dashboard.MusicUnit.State
+                     , Dashboard.MusicUnit.State.Metadata
+                     , Dashboard.MusicUnit.State.TrackData
                      , Dashboard.Paths
                      , Dashboard.Server
                      , Dashboard.Server.Errors

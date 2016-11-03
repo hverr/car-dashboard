@@ -6,44 +6,26 @@ module Dashboard.MusicUnit.State (
 , HasMusicState(..)
 , emptyState
 
-  -- * Metadata
-, Metadata(..)
-
-  -- * Track Data
-, TrackData(..)
+  -- * Re-exported data structures
+, Metadata
+, TrackData
 ) where
 
 import GHC.Generics (Generic)
 
 import Control.Concurrent.STM (TMVar, newEmptyTMVarIO)
-import Data.Aeson (ToJSON, FromJSON)
+
+import Dashboard.MusicUnit.State.Metadata (Metadata)
+import Dashboard.MusicUnit.State.TrackData (TrackData)
 
 -- | State of the music unit
-data State = State { metadata :: TMVar Metadata }
+data State = State { metadata :: TMVar Metadata
+                   , trackData :: TMVar TrackData }
                    deriving (Generic)
 
 -- | Default empty 'State'
 emptyState :: IO State
-emptyState = State <$> newEmptyTMVarIO
-
--- | Metadata about the music
-data Metadata = Metadata { songId :: Int
-                         , playing :: Bool
-                         , position :: Maybe Int
-                         , track :: Maybe String
-                         , artist :: Maybe String }
-                         deriving (Generic)
-
--- | Convert 'Metadata' to JSON
-instance FromJSON Metadata where
-
--- | Convert JSON to 'Metadata'
-instance ToJSON Metadata where
-
--- | The actual music data of a track
-data TrackData = TrackData { trackSongId :: Int
-                           , trackF :: String
-                           , trackFilePath :: FilePath }
+emptyState = State <$> newEmptyTMVarIO <*> newEmptyTMVarIO
 
 -- | Type class to get music state quickly
 class Monad m => HasMusicState m where
@@ -51,3 +33,6 @@ class Monad m => HasMusicState m where
 
     askMusicMetadata :: m (TMVar Metadata)
     askMusicMetadata = metadata <$> askMusicState
+
+    askMusicTrackData :: m (TMVar TrackData)
+    askMusicTrackData = trackData <$> askMusicState
