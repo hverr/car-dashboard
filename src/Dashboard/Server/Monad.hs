@@ -24,10 +24,10 @@ import Control.Monad.Reader (ReaderT, MonadReader, runReaderT, ask)
 import Control.Monad.Except (ExceptT, MonadError, runExceptT)
 
 import Dashboard.CarUnit (CarData)
-import Dashboard.MusicUnit (HasMusicState(..))
+import Dashboard.MusicUnit.State (HasMusicState(..))
 import Dashboard.Settings (Settings)
 import Dashboard.Server.Errors (ServerErr)
-import qualified Dashboard.MusicUnit as MusicUnit
+import qualified Dashboard.MusicUnit.State as MusicUnit
 
 -- | General server state
 data ServerState = ServerState { serverSettings :: Settings
