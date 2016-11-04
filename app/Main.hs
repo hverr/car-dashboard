@@ -36,12 +36,15 @@ import Dashboard.CarUnit (startFetchingData)
 import Dashboard.MusicUnit (startMusicUnit)
 import Dashboard.Server (startServer)
 import Dashboard.Server.Monad (ServerState(..), defaultState)
-import Dashboard.Settings (defaultSettings)
+import Dashboard.Settings (Settings(playMusicCmd), defaultSettings,
+                           defaultPlayMusicCmd, simulatePlayMusicCmd)
 
-data Options = Options ConnectionType (Maybe Protocol)
+data Options = Options ConnectionType (Maybe Protocol) MusicPlayer
 
 data ConnectionType = ConnectionTypeActualDevice FilePath
                     | ConnectionTypeSimulator
+
+data MusicPlayer = PlayMusic | SimulateMusic
 
 connectionType :: Parser ConnectionType
 connectionType = flag ConnectionTypeActualDevice (const ConnectionTypeSimulator) m <*> serialPort
@@ -56,8 +59,12 @@ protocolOpt = (^? protocol) <$> strOption m
     where m = long "protocol" <> short 'p' <> value "0" <> help h
           h = "The OBD protocol, see the SP command in the ELM327 datasheet"
 
+musicPlayer :: Parser MusicPlayer
+musicPlayer = flag SimulateMusic PlayMusic m
+    where m = long "with-music" <> help "Stream FM music on the GPIO pin"
+
 options :: Parser Options
-options = Options <$> connectionType <*> protocolOpt
+options = Options <$> connectionType <*> protocolOpt <*> musicPlayer
 
 main :: IO ()
 main = execParser i >>= main'
@@ -65,7 +72,7 @@ main = execParser i >>= main'
           p = helper <*> options
 
 main' :: Options -> IO ()
-main' (Options conType mProto) = do
+main' (Options conType mProto player) = do
     proto <- maybe (die "Invalid protocol (-p|--protocol)") return mProto
 
     -- Setup logging.
@@ -74,7 +81,9 @@ main' (Options conType mProto) = do
     updateGlobalLogger rootLoggerName $ setHandlers [stderrLog]
 
     -- Initialize the global state
-    state <- defaultState defaultSettings
+    let musicCmd = case player of PlayMusic -> defaultPlayMusicCmd
+                                  SimulateMusic -> simulatePlayMusicCmd
+    state <- defaultState (defaultSettings { playMusicCmd = musicCmd })
 
     -- Start server components
     _ <- forkIO $ carUnit conType proto state

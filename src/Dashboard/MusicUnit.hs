@@ -31,6 +31,7 @@ import Dashboard.MusicUnit.State (State(..), HasMusicState(..), emptyState,
                                   Metadata, TrackData)
 import Dashboard.Paths (getTrackDataFile)
 import Dashboard.MusicUnit.Monad (MusicUnitT, LocalState(..), GlobalState(..), runMusicUnit, ask, get, put)
+import Dashboard.MusicUnit.Player (play, stop)
 import Dashboard.Server.Monad (HasSettings(..))
 import Dashboard.Settings (Settings, musicCacheDir)
 import qualified Dashboard.MusicUnit.State.Metadata as Metadata
@@ -77,8 +78,8 @@ startMusicUnit' = do
     m <- stateMetadata <$> get
     t <- stateTrackData <$> get
     if Metadata.playing m && Metadata.songId m == TrackData.songId t
-        then error "not implemented: play music" >> return ()
-        else error "not implemented: pause music" >> return ()
+        then play
+        else stop
     update <- liftIO . atomically $ takeMetadataOrTrackData state
     case update of
         Left x -> get >>= put . (\s -> s { stateMetadata = x })
