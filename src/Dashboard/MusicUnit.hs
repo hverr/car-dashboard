@@ -1,5 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE FlexibleContexts #-}
 -- | Unit managing the music component of the application.
 --
 -- For more functions to manage state, see 'Dashboard.MusicUnit.State'.
@@ -16,7 +14,6 @@ module Dashboard.MusicUnit (
 , updateTrackData
 
   -- * Main logic
-, MusicUnitT(..)
 , startMusicUnit
 ) where
 
@@ -25,8 +22,6 @@ import Prelude hiding (writeFile)
 import Control.Applicative ((<|>))
 import Control.Concurrent.STM (STM, atomically, putTMVar, takeTMVar, tryReadTMVar)
 import Control.Monad.IO.Class (MonadIO, liftIO)
-import Control.Monad.Reader (ReaderT, MonadReader, runReaderT, ask)
-import Control.Monad.State (StateT, MonadState, runStateT, get, put)
 
 import Data.ByteString.Lazy (ByteString, writeFile)
 
@@ -35,6 +30,7 @@ import System.Directory (createDirectoryIfMissing)
 import Dashboard.MusicUnit.State (State(..), HasMusicState(..), emptyState,
                                   Metadata, TrackData)
 import Dashboard.Paths (getTrackDataFile)
+import Dashboard.MusicUnit.Monad (MusicUnitT, LocalState(..), GlobalState(..), runMusicUnit, ask, get, put)
 import Dashboard.Server.Monad (HasSettings(..))
 import Dashboard.Settings (Settings, musicCacheDir)
 import qualified Dashboard.MusicUnit.State.Metadata as Metadata
@@ -68,25 +64,12 @@ startMusicUnit settings state = loop Nothing Nothing
     loop (Just m) (Just t) = do
         let localState = LocalState m t
         let globalState = GlobalState settings state
-        _ <- flip runReaderT globalState $ flip runStateT localState $ runMusicUnitT startMusicUnit'
-        return ()
+        runMusicUnit startMusicUnit' localState globalState
     loop m t = do
         update <- liftIO . atomically $ takeMetadataOrTrackData state
         case update of
             Left x -> loop (Just x) t
             Right x -> loop m (Just x)
-
--- | State globally accessible
-data GlobalState = GlobalState { _serverSettings :: Settings
-                               , musicState :: State }
-
--- | State local to the music unit.
-data LocalState = LocalState { stateMetadata :: Metadata
-                             , stateTrackData :: TrackData }
-
--- | Monad transformer for the music unit.
-newtype MusicUnitT m a = MusicUnitT { runMusicUnitT :: StateT LocalState (ReaderT GlobalState m) a }
-                       deriving (Functor, Applicative, Monad, MonadIO, MonadState LocalState, MonadReader GlobalState)
 
 startMusicUnit' :: MonadIO m => MusicUnitT m ()
 startMusicUnit' = do

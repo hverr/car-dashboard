@@ -18,6 +18,7 @@ library
                      , Dashboard.CarUnit.Json
                      , Dashboard.MusicUnit
                      , Dashboard.MusicUnit.Files
+                     , Dashboard.MusicUnit.Monad
                      , Dashboard.MusicUnit.State
                      , Dashboard.MusicUnit.State.Metadata
                      , Dashboard.MusicUnit.State.TrackData
