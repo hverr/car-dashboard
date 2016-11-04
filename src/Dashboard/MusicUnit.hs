@@ -91,8 +91,8 @@ startMusicUnit' = do
     m <- stateMetadata <$> get
     t <- stateTrackData <$> get
     if Metadata.playing m && Metadata.songId m == TrackData.songId t
-        then error "not implemented: play music"
-        else error "not implemented: pause music"
+        then error "not implemented: play music" >> return ()
+        else error "not implemented: pause music" >> return ()
     let m' = takeTMVar (metadata state)
     let t' = takeTMVar (trackData state)
     update <- liftIO . atomically $ (Left <$> m') <|> (Right <$> t')

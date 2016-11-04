@@ -33,6 +33,7 @@ import qualified System.Hardware.ELM327 as ELM327
 import qualified System.Hardware.ELM327.Simulator as Simulator
 
 import Dashboard.CarUnit (startFetchingData)
+import Dashboard.MusicUnit (startMusicUnit)
 import Dashboard.Server (startServer)
 import Dashboard.Server.Monad (ServerState(..), defaultState)
 import Dashboard.Settings (defaultSettings)
@@ -125,3 +126,11 @@ carUnit ct proto state = forever $ try (bracket connect close' fetcher) >>= eith
         atomically $ writeTVar (carError state) (Just msg)
         errorM "carunit" $ show e
         threadDelay $ 5*1000*1000
+
+musicUnit :: ServerState -> IO ()
+musicUnit state = forever $ try musicUnit' >>= either handleExc return
+  where
+    musicUnit' = startMusicUnit (serverSettings state) (musicState state)
+
+    handleExc :: SomeException -> IO ()
+    handleExc e = errorM "musicunit" $ show e
