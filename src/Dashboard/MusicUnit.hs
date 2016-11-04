@@ -23,7 +23,7 @@ module Dashboard.MusicUnit (
 import Prelude hiding (writeFile)
 
 import Control.Applicative ((<|>))
-import Control.Concurrent.STM (atomically, putTMVar, takeTMVar, tryReadTMVar)
+import Control.Concurrent.STM (STM, atomically, putTMVar, takeTMVar, tryReadTMVar)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Reader (ReaderT, MonadReader, runReaderT, ask)
 import Control.Monad.State (StateT, MonadState, runStateT, get, put)
@@ -63,15 +63,18 @@ updateTrackData x bs = do
 
 -- | Start the music unit
 startMusicUnit :: MonadIO m => Settings -> State -> m ()
-startMusicUnit settings state = do
-    (m, t) <- liftIO . atomically $ do
-        a <- takeTMVar (metadata state)
-        b <- takeTMVar (trackData state)
-        return (a, b)
-    let localState = LocalState m t
-    let globalState = GlobalState settings state
-    _ <- flip runReaderT globalState $ flip runStateT localState $ runMusicUnitT startMusicUnit'
-    return ()
+startMusicUnit settings state = loop Nothing Nothing
+  where
+    loop (Just m) (Just t) = do
+        let localState = LocalState m t
+        let globalState = GlobalState settings state
+        _ <- flip runReaderT globalState $ flip runStateT localState $ runMusicUnitT startMusicUnit'
+        return ()
+    loop m t = do
+        update <- liftIO . atomically $ takeMetadataOrTrackData state
+        case update of
+            Left x -> loop (Just x) t
+            Right x -> loop m (Just x)
 
 -- | State globally accessible
 data GlobalState = GlobalState { _serverSettings :: Settings
@@ -93,10 +96,15 @@ startMusicUnit' = do
     if Metadata.playing m && Metadata.songId m == TrackData.songId t
         then error "not implemented: play music" >> return ()
         else error "not implemented: pause music" >> return ()
-    let m' = takeTMVar (metadata state)
-    let t' = takeTMVar (trackData state)
-    update <- liftIO . atomically $ (Left <$> m') <|> (Right <$> t')
+    update <- liftIO . atomically $ takeMetadataOrTrackData state
     case update of
         Left x -> get >>= put . (\s -> s { stateMetadata = x })
         Right x -> get >>= put . (\s -> s { stateTrackData = x })
     startMusicUnit'
+
+-- | Read-in either new metadata or new track data.
+takeMetadataOrTrackData :: State -> STM (Either Metadata TrackData)
+takeMetadataOrTrackData state =
+    let m = takeTMVar (metadata state)
+        t = takeTMVar (trackData state)
+    in (Left <$> m) <|> (Right <$> t)
