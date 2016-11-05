@@ -30,6 +30,7 @@ cp "$BIN" "$DEB_ROOT/usr/bin/car-dashboard"
 cp car-dashboard.service "$DEB_ROOT/lib/systemd/system/"
 rsync -r data "$DEB_ROOT/usr/share/car-dashboard/"
 rsync -r node_modules "$DEB_ROOT/usr/share/car-dashboard/"
+rsync    car-dashboard-stream-music "$DEB_ROOT/usr/share/car-dashboard/"
 
 cat <<EOF > "$DEB_ROOT/DEBIAN/control"
 Package: car-dashboard
