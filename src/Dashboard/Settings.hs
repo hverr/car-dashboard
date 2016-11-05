@@ -29,7 +29,8 @@ defaultPlayMusicCmd :: NonEmpty PartialArgument
 defaultPlayMusicCmd = SArg "./car-dashboard-stream-music" :|
                       [ SArg "--file"  , SPlaceholder "file"
                       , SArg "--title" , SPlaceholder "title"
-                      , SArg "--artist", SPlaceholder "artist" ]
+                      , SArg "--artist", SPlaceholder "artist"
+                      , SArg "--position", SPlaceholder "position" ]
 
 -- | Command to simulate playing music.
 simulatePlayMusicCmd :: NonEmpty PartialArgument

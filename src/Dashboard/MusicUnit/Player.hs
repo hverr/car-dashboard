@@ -15,7 +15,7 @@ import Data.Maybe (fromMaybe)
 
 import System.Log.Logger (infoM, warningM, errorM)
 import System.Posix.Process (forkProcess, executeFile, getProcessStatus)
-import System.Posix.Signals (signalProcess, sigINT, sigKILL)
+import System.Posix.Signals (signalProcess, sigTERM, sigKILL)
 import System.Posix.Types (ProcessID)
 
 import Dashboard.MusicUnit.Monad (MusicUnitT, GlobalState(..), LocalState(..), MusicPlayer(..),
@@ -58,7 +58,8 @@ play = do
 
     subst x _ "file" = Just x
     subst _ d "artist" = Just $ fromMaybe "Unknown" $ Metadata.artist d
-    subst _ d "title" = Just $ fromMaybe "Unknown" $ Metadata.artist d
+    subst _ d "title" = Just $ fromMaybe "Unknown" $ Metadata.track d
+    subst _ d "position" = Just $ fromMaybe "null" $ show <$> Metadata.position d
     subst _ _ _ = Nothing
 
     waitFor pid = maybe (waitFor pid) return =<< getProcessStatus True False pid
@@ -76,7 +77,7 @@ stop = do
             case status of
                 Just _ -> return ()
                 Nothing -> do
-                    sendSigINT (playerProcessID player)
+                    sendSigTERM (playerProcessID player)
                     timeout <- liftIO $ registerDelay (3 * 1000 * 1000)
                     stopped <- liftIO . atomically $ do
                         s <- tryTakeTMVar (playerExited player)
@@ -90,9 +91,9 @@ stop = do
                         return ()
     modify $ \s -> s { stateMusicPlayer = Nothing }
   where
-    sendSigINT pid = do
-        liftIO . infoM "musicunit" $ "Stopping music: sending SIGINT to " ++ show pid
-        liftIO $ signalProcess sigINT pid
+    sendSigTERM pid = do
+        liftIO . infoM "musicunit" $ "Stopping music: sending SIGTERM to " ++ show pid
+        liftIO $ signalProcess sigTERM pid
     sendSigKILL pid = do
         liftIO . warningM "musicunit" $ "Stopping music: sending SIGKILL to " ++ show pid
         liftIO $ signalProcess sigKILL pid

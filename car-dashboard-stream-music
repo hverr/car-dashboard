@@ -3,3 +3,7 @@
 set -e
 
 echo "$0" "$@"
+
+while true; do
+    sleep 10
+done
