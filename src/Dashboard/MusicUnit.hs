@@ -27,7 +27,7 @@ import Control.Monad.IO.Class (MonadIO, liftIO)
 
 import Data.ByteString.Lazy (ByteString, writeFile)
 
-import System.Directory (createDirectoryIfMissing, removeFile)
+import System.Directory (createDirectoryIfMissing, removeDirectoryRecursive, removeFile)
 import System.IO.Error (isDoesNotExistError)
 
 import Dashboard.MusicUnit.State (State(..), HasMusicState(..), emptyState,
@@ -67,15 +67,14 @@ updateTrackData x bs = do
     askMusicCachedTrackData >>= liftIO . atomically . flip writeTVar (Just x)
 
   where
-    removeIfExists fp = liftIO $ removeFile fp `catch` handleExists
-    handleExists e | isDoesNotExistError e = return ()
-                   | otherwise = throwIO e
+    removeIfExists fp = liftIO $ removeFile fp `catch` ignoreDoesNotExistError
 
 
 -- | Start the music unit
 startMusicUnit :: MonadIO m => Settings -> State -> m ()
-startMusicUnit settings state = loop Nothing Nothing
+startMusicUnit settings state = clearCache >> loop Nothing Nothing
   where
+    clearCache = liftIO $ removeDirectoryRecursive (musicCacheDir settings) `catch` ignoreDoesNotExistError
     loop (Just m) (Just t) = do
         let localState = LocalState m t Nothing
         let globalState = GlobalState settings state
@@ -106,3 +105,8 @@ takeMetadataOrTrackData state =
     let m = takeTMVar (metadata state)
         t = takeTMVar (newTrackData state)
     in (Left <$> m) <|> (Right <$> t)
+
+-- | Ignore 'does note exist' errors
+ignoreDoesNotExistError :: IOError -> IO ()
+ignoreDoesNotExistError e | isDoesNotExistError e = return ()
+                          | otherwise = throwIO e
