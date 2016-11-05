@@ -63,7 +63,7 @@ startMusicUnit :: MonadIO m => Settings -> State -> m ()
 startMusicUnit settings state = loop Nothing Nothing
   where
     loop (Just m) (Just t) = do
-        let localState = LocalState m t
+        let localState = LocalState m t Nothing
         let globalState = GlobalState settings state
         runMusicUnit startMusicUnit' localState globalState
     loop m t = do
