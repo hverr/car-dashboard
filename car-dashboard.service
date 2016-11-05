@@ -3,7 +3,7 @@ Description=Car Dashboard
 
 [Service]
 WorkingDirectory=/usr/share/car-dashboard
-ExecStart=/usr/bin/car-dashboard --protocol 4
+ExecStart=/usr/bin/car-dashboard --protocol 4 --with-music
 
 [Install]
 WantedBy=multi-user.target
