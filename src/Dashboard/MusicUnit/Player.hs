@@ -4,16 +4,21 @@ module Dashboard.MusicUnit.Player (
 , stop
 ) where
 
+import Control.Concurrent (forkIO)
+import Control.Concurrent.STM (atomically, newEmptyTMVarIO, putTMVar, tryTakeTMVar, takeTMVar,
+                               registerDelay, readTVar, retry)
+
+import Control.Monad (unless)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.List.NonEmpty (NonEmpty((:|)))
 import Data.Maybe (fromMaybe)
 
-import System.Log.Logger (infoM, errorM)
-import System.Posix.Process (forkProcess, executeFile)
-import System.Posix.Signals (signalProcess, sigINT)
+import System.Log.Logger (infoM, warningM, errorM)
+import System.Posix.Process (forkProcess, executeFile, getProcessStatus)
+import System.Posix.Signals (signalProcess, sigINT, sigKILL)
 import System.Posix.Types (ProcessID)
 
-import Dashboard.MusicUnit.Monad (MusicUnitT, GlobalState(..), LocalState(..),
+import Dashboard.MusicUnit.Monad (MusicUnitT, GlobalState(..), LocalState(..), MusicPlayer(..),
                                   ask, get, modify)
 import Dashboard.Paths (getTrackDataFile)
 import Dashboard.Settings (Settings(playMusicCmd), completePartialArgumentsNonEmpty)
@@ -23,8 +28,13 @@ import qualified Dashboard.MusicUnit.State.Metadata as Metadata
 play :: MonadIO m => MusicUnitT m ()
 play = do
     stop
-    pid <- launch
-    modify $ \s -> s { statePlayProcessID = pid }
+    mpid <- launch
+    case mpid of
+        Nothing -> return ()
+        Just pid -> do
+            status <- liftIO newEmptyTMVarIO
+            _ <- liftIO . forkIO $ waitFor pid >>= atomically . putTMVar status
+            modify $ \s -> s { stateMusicPlayer = Just $ MusicPlayer pid status }
   where
     launch :: MonadIO m => MusicUnitT m (Maybe ProcessID)
     launch = do
@@ -51,15 +61,38 @@ play = do
     subst _ d "title" = Just $ fromMaybe "Unknown" $ Metadata.artist d
     subst _ _ _ = Nothing
 
+    waitFor pid = maybe (waitFor pid) return =<< getProcessStatus True False pid
+
 
 
 -- | Stop the current song.
 stop :: MonadIO m => MusicUnitT m ()
 stop = do
-    pid <- statePlayProcessID <$> get
-    maybe (return ()) stop' pid
+    mplayer <- stateMusicPlayer <$> get
+    case mplayer of
+        Nothing -> return ()
+        Just player -> do
+            status <- liftIO . atomically $ tryTakeTMVar (playerExited player)
+            case status of
+                Just _ -> return ()
+                Nothing -> do
+                    sendSigINT (playerProcessID player)
+                    timeout <- liftIO $ registerDelay (3 * 1000 * 1000)
+                    stopped <- liftIO . atomically $ do
+                        s <- tryTakeTMVar (playerExited player)
+                        to <- readTVar timeout
+                        case (s, to) of (Just _, _) -> return True
+                                        (_, True)   -> return False
+                                        (_, False)  -> retry
+                    unless stopped $ do
+                        sendSigKILL (playerProcessID player)
+                        _ <- liftIO . atomically $ takeTMVar (playerExited player)
+                        return ()
+    modify $ \s -> s { stateMusicPlayer = Nothing }
   where
-    stop' pid = do
+    sendSigINT pid = do
         liftIO . infoM "musicunit" $ "Stopping music: sending SIGINT to " ++ show pid
         liftIO $ signalProcess sigINT pid
-        undefined
+    sendSigKILL pid = do
+        liftIO . warningM "musicunit" $ "Stopping music: sending SIGKILL to " ++ show pid
+        liftIO $ signalProcess sigKILL pid

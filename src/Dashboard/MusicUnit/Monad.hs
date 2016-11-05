@@ -9,15 +9,19 @@ module Dashboard.MusicUnit.Monad (
   -- * State structures
 , GlobalState(..)
 , LocalState(..)
+, MusicPlayer(..)
 
   -- * Re-exports
 , ask, get, put, modify
 ) where
 
+
+import Control.Concurrent.STM (TMVar)
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Reader (ReaderT, MonadReader, runReaderT, ask)
 import Control.Monad.State (StateT, MonadState, runStateT, get, put, modify)
 
+import System.Posix.Process (ProcessStatus)
 import System.Posix.Types (ProcessID)
 
 import Dashboard.MusicUnit.State (State(..), Metadata, TrackData)
@@ -30,7 +34,11 @@ data GlobalState = GlobalState { serverSettings :: Settings
 -- | State local to the music unit.
 data LocalState = LocalState { stateMetadata :: Metadata
                              , stateTrackData :: TrackData
-                             , statePlayProcessID :: Maybe ProcessID }
+                             , stateMusicPlayer :: Maybe MusicPlayer }
+
+-- | A running music player.
+data MusicPlayer = MusicPlayer { playerProcessID :: ProcessID
+                               , playerExited :: TMVar ProcessStatus }
 
 -- | Monad transformer for the music unit.
 newtype MusicUnitT m a = MusicUnitT { runMusicUnitT :: StateT LocalState (ReaderT GlobalState m) a }
