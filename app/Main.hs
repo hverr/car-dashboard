@@ -87,6 +87,7 @@ main' (Options conType mProto player) = do
 
     -- Start server components
     _ <- forkIO $ carUnit conType proto state
+    _ <- forkIO $ musicUnit state
     startServer 8080 state
   where
     format = simpleLogFormatter "[$time $loggername $prio] $msg"
