@@ -2,8 +2,98 @@
 
 set -e
 
-echo "$0" "$@"
+SHOW_HELP=n
+SIMULATE=n
+FILE=
+TITLE=
+ARTIST=
+POSITION=
 
+[ -z "$PI_FM_RDS" ] && PI_FM_RDS=pi_fm_rds
+[ -z "$FFMPEG" ] && FFMPEG=avconv
+
+function die {
+    echo "$@" >&2
+    exit 1
+}
+
+function shutdown {
+    echo "Shuting down on signal..."
+    echo "Killing ffmpeg $FFMPEG_PID"
+    [ -n "$FFMPEG_PID" ] && kill -SIGTERM "$FFMPEG_PID"
+    echo "Waiting for pid $PI_FM_RDS_PID"
+    wait "$PI_FM_RDS_PID"
+}
+
+trap "shutdown" SIGINT SIGTERM
+
+TEMP=`getopt -o h --long help,simulate,file:,title:,artist:,position: -n car-dashboard-stream-music -- "$@"`
+eval set -- "$TEMP"
 while true; do
-    sleep 10
+    case "$1" in
+        -h|--help)  SHOW_HELP=y         ; shift   ;;
+        --simulate) SIMULATE=y          ; shift   ;;
+        --file)     FILE="$2"           ; shift 2 ;;
+        --title)    TITLE="$2"          ; shift 2 ;;
+        --artist)   ARTIST="$2"         ; shift 2 ;;
+        --position) POSITION="$2"       ; shift 2 ;;
+        --)         shift               ; break   ;;
+    esac
 done
+
+if [ "$SHOW_HELP" = y ]; then
+    echo "usage: $0 {-h|--help}"
+    echo "       $0 --file FILE [--simulate] [--title TITLE] [--artist ARTIST] [--position POS]"
+    exit 0
+fi
+
+[ -z "$FILE" ] && die "error: no file specified (--file flag)"
+[ ! -f "$FILE" ] && die "error: file does not exist: $FILE"
+
+if [ "$SIMULATE" = y ]; then
+    echo "SIMULATE=$SIMULATE"
+    echo "FILE=$FILE"
+    echo "TITLE=$TITLE"
+    echo "ARTIST=$ARTIST"
+    echo "POSITION=$POSITION"
+
+    while true; do
+        sleep 10
+    done
+    exit
+fi
+
+which "$PI_FM_RDS" >/dev/null || die "error: pi_fm_rds executable not found: which $PI_FM_RDS"
+which "$FFMPEG" >/dev/null || die "error: ffmpeg executable not found: which $FFMPEG"
+
+if [ -z "$TITLE" -a -z "$ARTIST" ]; then
+    RT=
+elif [ -z "$TITLE" ]; then
+    RT="$ARTIST"
+elif [ -z "$ARTIST" ]; then
+    RT="$TITLE"
+else
+    RT="$TITLE - $ARTIST"
+fi
+
+if [ -n "$POSITION" ] && ! echo "$POSITION" | grep '[^0-9]' >/dev/null; then
+    POS_ARG="-ss $(python -c "print $POSITION/1000.0")"
+else
+    POS_ARG=
+fi
+
+FIFO_DIR=$(mktemp -d)
+FIFO="$FIFO_DIR/fifo"
+mkfifo "$FIFO"
+
+echo "$FFMPEG" -y -loglevel 0 -nostats $POS_ARG -i "$FILE" -acodec pcm_s16be -ar 44100 -f au "$FIFO"
+echo "$PI_FM_RDS" -audio "$FIFO" -freq 87.5 -ps RPI -rt "$RT"
+
+"$FFMPEG" -y -loglevel 0 -nostats $POS_ARG -i "$FILE" -acodec pcm_s16be -ar 44100 -f au "$FIFO" &
+FFMPEG_PID=$!
+"$PI_FM_RDS" -audio "$FIFO" -freq 87.5 -ps RPI -rt "$RT" &
+PI_FM_RDS_PID=$!
+
+echo "Waiting for pid $PI_FM_RDS_PID"
+wait $PI_FM_RDS_PID
+rm -rf "$FIFO_DIR"

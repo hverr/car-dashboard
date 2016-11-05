@@ -59,7 +59,7 @@ play = do
     subst x _ "file" = Just x
     subst _ d "artist" = Just $ fromMaybe "Unknown" $ Metadata.artist d
     subst _ d "title" = Just $ fromMaybe "Unknown" $ Metadata.track d
-    subst _ d "position" = Just $ fromMaybe "null" $ show <$> Metadata.position d
+    subst _ d "position" = Just $ fromMaybe "" $ show <$> Metadata.position d
     subst _ _ _ = Nothing
 
     waitFor pid = maybe (waitFor pid) return =<< getProcessStatus True False pid
