@@ -15,7 +15,7 @@ import qualified Data.Text as Text
 -- | A valid 'FileExtension'.
 --
 -- Use 'fileExtension' to convert to and from 'String'.
-data FileExtension = FileExtension String
+data FileExtension = FileExtension String deriving (Show)
 
 -- | Convert between 'String' and 'FileExtension'
 fileExtension :: Prism' String FileExtension

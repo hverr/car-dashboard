@@ -20,12 +20,15 @@ module Dashboard.MusicUnit (
 import Prelude hiding (writeFile)
 
 import Control.Applicative ((<|>))
-import Control.Concurrent.STM (STM, atomically, putTMVar, takeTMVar, tryReadTMVar)
+import Control.Concurrent.STM (STM, atomically, putTMVar, takeTMVar, tryReadTMVar, readTVar, writeTVar)
+import Control.Exception (throwIO, catch)
+import Control.Monad ((>=>))
 import Control.Monad.IO.Class (MonadIO, liftIO)
 
 import Data.ByteString.Lazy (ByteString, writeFile)
 
-import System.Directory (createDirectoryIfMissing)
+import System.Directory (createDirectoryIfMissing, removeFile)
+import System.IO.Error (isDoesNotExistError)
 
 import Dashboard.MusicUnit.State (State(..), HasMusicState(..), emptyState,
                                   Metadata, TrackData)
@@ -47,15 +50,26 @@ updateMetadata x = askMusicMetadata >>= liftIO . atomically . flip putTMVar x
 
 -- | Query the current track data.
 queryTrackData :: (MonadIO m, HasMusicState m) => m (Maybe TrackData)
-queryTrackData = askMusicTrackData >>= liftIO . atomically . tryReadTMVar
+queryTrackData = askMusicCachedTrackData >>= liftIO . atomically . readTVar
 
 -- | Update the track data.
 updateTrackData :: (MonadIO m, HasMusicState m, HasSettings m) => TrackData -> ByteString -> m ()
 updateTrackData x bs = do
+    -- Remove old data
+    maybeOld <- askMusicCachedTrackData >>= liftIO . atomically . readTVar
+    maybe (return ()) (getTrackDataFile >=> removeIfExists) maybeOld
+
+    -- Write track data
     fp <- getTrackDataFile x
     askSettings >>= liftIO . createDirectoryIfMissing True . musicCacheDir
     liftIO $ writeFile fp bs
-    askMusicTrackData >>= liftIO . atomically . flip putTMVar x
+    askMusicNewTrackData >>= liftIO . atomically . flip putTMVar x
+    askMusicCachedTrackData >>= liftIO . atomically . flip writeTVar (Just x)
+
+  where
+    removeIfExists fp = liftIO $ removeFile fp `catch` handleExists
+    handleExists e | isDoesNotExistError e = return ()
+                   | otherwise = throwIO e
 
 
 -- | Start the music unit
@@ -90,5 +104,5 @@ startMusicUnit' = do
 takeMetadataOrTrackData :: State -> STM (Either Metadata TrackData)
 takeMetadataOrTrackData state =
     let m = takeTMVar (metadata state)
-        t = takeTMVar (trackData state)
+        t = takeTMVar (newTrackData state)
     in (Left <$> m) <|> (Right <$> t)

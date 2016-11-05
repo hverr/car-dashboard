@@ -10,7 +10,7 @@ import Dashboard.MusicUnit.Files (FileExtension)
 -- | Raw track data.
 data TrackData = TrackData { songId :: Int
                            , fileExtension :: FileExtension }
-                         deriving (Generic)
+                         deriving (Show, Generic)
 
 -- | Convert 'TrackData' to JSON
 instance FromJSON TrackData where
