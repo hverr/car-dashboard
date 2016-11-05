@@ -38,7 +38,7 @@ Version: ${VERSION}-${REVISION}
 Section: base
 Priority: optional
 Architecture: $ARCH
-Depends: zlib1g-dev, libncurses5-dev
+Depends: zlib1g-dev, libncurses5-dev, libav-tools
 Maintainer: Henri Verroken <henriverroken@gmail.com>
 Description: Car Dashboard
 EOF
