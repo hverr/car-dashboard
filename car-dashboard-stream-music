@@ -21,8 +21,10 @@ function shutdown {
     echo "Shuting down on signal..."
     echo "Killing ffmpeg $FFMPEG_PID"
     [ -n "$FFMPEG_PID" ] && kill -SIGTERM "$FFMPEG_PID"
-    echo "Waiting for pid $PI_FM_RDS_PID"
-    wait "$PI_FM_RDS_PID"
+    if [ -n "$PI_FM_RDS_PID" ]; then
+        echo "Waiting for pi_fm_rds $PI_FM_RDS_PID"
+        wait "$PI_FM_RDS_PID"
+    fi
 }
 
 trap "shutdown" SIGINT SIGTERM
