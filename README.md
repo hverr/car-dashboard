@@ -1,7 +1,23 @@
 Car Dashboard
 =============
 
-Use your Android phone as a car dashboard.
+Use your Android phone as a car dashboard using a Raspberry Pi, to
+
+ - Monitor speed, RPM, fuel rate, engine temperature, ...
+ - Stream music from your phone to FM on 87.5 kHz
+
+Installing
+----------
+
+1. Download the latest release
+2. Install the deb file using `dpkg -i`
+3. Possibly edit `/etc/systemd/system/car-dashboard.service` to select the correct OBD protocol
+4. Run `systemctl daemon-reload; systemctl start car-dashboard.service'`
+5. Install the [Android application](https://github.com/hverr/car-dashboard-android)
+6. Turn on the WiFi hotspot on your phone
+7. Connect your Raspberry Pi to your phone's WiFi network with static IP 192.168.43.65
+8. Open the Android application and enable music streaming
+9. Point your FM car radio to 87.5 kHz
 
 Developing
 ----------
