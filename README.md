@@ -19,6 +19,11 @@ Installing
 8. Open the Android application and enable music streaming
 9. Point your FM car radio to 87.5 kHz
 
+![screenshot of dashboard][dashboard] ![screenshot of streaming][streaming]
+
+  [dashboard]: media/dashboard_250.png
+  [streaming]: media/streaming_250.png
+
 Developing
 ----------
 
