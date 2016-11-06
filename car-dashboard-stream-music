@@ -25,6 +25,8 @@ function shutdown {
         echo "Waiting for pi_fm_rds $PI_FM_RDS_PID"
         wait "$PI_FM_RDS_PID"
     fi
+
+    exit
 }
 
 trap "shutdown" SIGINT SIGTERM
