@@ -6,6 +6,11 @@ Use your Android phone as a car dashboard using a Raspberry Pi, to
  - Monitor speed, RPM, fuel rate, engine temperature, ...
  - Stream music from your phone to FM on 87.5 kHz
 
+![screenshot of dashboard][dashboard] ![screenshot of streaming][streaming]
+
+  [dashboard]: media/dashboard_250.png
+  [streaming]: media/streaming_250.png
+
 Installing
 ----------
 
@@ -28,11 +33,6 @@ install -m 0755 pi_fm_rds /usr/local/bin/pi_fm_rds
 7. Connect your Raspberry Pi to your phone's WiFi network with static IP 192.168.43.65
 8. Open the Android application and enable music streaming
 9. Point your FM car radio to 87.5 kHz
-
-![screenshot of dashboard][dashboard] ![screenshot of streaming][streaming]
-
-  [dashboard]: media/dashboard_250.png
-  [streaming]: media/streaming_250.png
 
 Developing
 ----------
