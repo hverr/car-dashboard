@@ -9,6 +9,16 @@ Use your Android phone as a car dashboard using a Raspberry Pi, to
 Installing
 ----------
 
+If you want to stream music, you should install [PiFmRds](https://github.com/ChristopheJacquet/PiFmRds) on your Raspberry Pi.
+
+```sh
+sudo apt-get install build-essential libsndfile-dev
+git clone https://github.com/ChristopheJacquet/PiFmRds
+cd PiFmRds
+make clean && make
+install -m 0755 pi_fm_rds /usr/local/bin/pi_fm_rds
+```
+
 1. Download the latest release
 2. Install the deb file using `dpkg -i`
 3. Possibly edit `/etc/systemd/system/car-dashboard.service` to select the correct OBD protocol
