@@ -19,7 +19,7 @@ If you want to stream music, you should install [PiFmRds](https://github.com/Chr
 ```sh
 sudo apt-get install build-essential libsndfile-dev
 git clone https://github.com/ChristopheJacquet/PiFmRds
-cd PiFmRds
+cd PiFmRds/src
 make clean && make
 install -m 0755 pi_fm_rds /usr/local/bin/pi_fm_rds
 ```
